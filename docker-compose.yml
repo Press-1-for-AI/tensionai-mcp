@@ -1,0 +1,251 @@
+version: '3.8'
+
+# =============================================================================
+# TensionAI MCP Server - Docker Compose
+# =============================================================================
+# 
+# This configuration provides:
+# - MCP Server with host network mode for local LLM access
+# - PostgreSQL for data persistence
+# - Redis for caching and queue management
+# - Optional local LLM (vllm) for testing
+# - Prometheus for metrics collection
+# - Grafana for visualization
+#
+# Usage:
+#   docker compose up -d              # Start all services
+#   docker compose up -d mcp-server   # Start only MCP server with dependencies
+#   docker compose up -d local-llm    # Include local LLM
+#   docker compose down               # Stop all services
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # MCP Server - Main Application
+  # ---------------------------------------------------------------------------
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tensionai-mcp
+    ports:
+      - "3000:3000"      # Main API
+      - "9090:9090"      # Prometheus metrics
+    environment:
+      # Server
+      - NODE_ENV=production
+      - PORT=3000
+      - HOST=0.0.0.0
+      
+      # Database
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/tensionai
+      
+      # Redis
+      - REDIS_URL=redis://redis:6379
+      
+      # Auth
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - API_KEYS=${API_KEYS:-dev-key-123}
+      
+      # Providers (OpenAI)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      
+      # Providers (Anthropic)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      
+      # Providers (MiniMax)
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY:-}
+      
+      # Providers (Google)
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      
+      # Local Models
+      - VLLM_BASE_URL=${VLLM_BASE_URL:-http://host.docker.internal:8000}
+      - LLAMA_CPP_URL=${LLAMA_CPP_URL:-http://host.docker.internal:8080}
+      
+      # Memory Backends (optional)
+      - OPENMEMORY_API_KEY=${OPENMEMORY_API_KEY:-}
+      - COGNEE_API_KEY=${COGNEE_API_KEY:-}
+      - MEM0_API_KEY=${MEM0_API_KEY:-}
+      
+      # Feature Flags
+      - ENABLE_TIEBREAKER=${ENABLE_TIEBREAKER:-true}
+      - AUTO_DETECT_QUALITY=${AUTO_DETECT_QUALITY:-true}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      
+      # Metrics
+      - METRICS_ENABLED=true
+      - METRICS_PORT=9090
+    
+    # Host network mode for local LLM access
+    network_mode: host
+    
+    volumes:
+      - mcp_data:/app/data
+      - mcp_logs:/app/logs
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bunx", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL Database
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tensionai-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=tensionai
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tensionai-network
+    
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # Redis Cache & Queue
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: tensionai-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - tensionai-network
+    
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ---------------------------------------------------------------------------
+  # Local LLM (Optional - vllm)
+  # ---------------------------------------------------------------------------
+  local-llm:
+    image: vllm/vllm:latest
+    container_name: tensionai-local-llm
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL=/models/llama-3-8b
+      - GPU_MEMORY_FRACTION=0.8
+      - MAX_MODEL_LEN=8192
+    volumes:
+      - llm_models:/models
+    # Host network mode required for GPU access
+    network_mode: host
+    
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    profiles:
+      - llm
+
+  # ---------------------------------------------------------------------------
+  # Prometheus Metrics
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tensionai-prometheus
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - tensionai-network
+    
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ---------------------------------------------------------------------------
+  # Grafana Dashboard
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tensionai-grafana
+    ports:
+      - "3030:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3030
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning/dashboards
+    networks:
+      - tensionai-network
+    
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  tensionai-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  llm_models:
+    driver: local
+  mcp_data:
+    driver: local
+  mcp_logs:
+    driver: local

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TensionAI MCP Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="logo">TensionAI MCP Dashboard</h1>
+        <div class="header-status">
+          <span id="connection-status" class="status-indicator disconnected">
+            <span class="status-dot"></span>
+            Disconnected
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Stats Overview -->
+      <section class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📋</div>
+          <div class="stat-value" id="active-tasks">0</div>
+          <div class="stat-label">Active Tasks</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏳</div>
+          <div class="stat-value" id="queued-tasks">0</div>
+          <div class="stat-label">Queued</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">✅</div>
+          <div class="stat-value" id="completed-today">0</div>
+          <div class="stat-label">Completed Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-value" id="avg-latency">0ms</div>
+          <div class="stat-label">Avg Latency</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value" id="total-cost">$0.00</div>
+          <div class="stat-label">Cost Today</div>
+        </div>
+      </section>
+
+      <!-- Provider Status -->
+      <section class="providers-section">
+        <h2 class="section-title">Provider Status</h2>
+        <div class="providers-grid" id="providers-grid">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Resource Usage Charts -->
+      <section class="charts-section">
+        <h2 class="section-title">Resource Usage</h2>
+        <div class="charts-grid">
+          <div class="chart-card">
+            <h3>Token Usage</h3>
+            <div class="bar-chart" id="token-chart">
+              <div class="bar-container">
+                <div class="bar-label">Input</div>
+                <div class="bar-wrapper">
+                  <div class="bar" id="input-tokens-bar" style="width: 0%"></div>
+                </div>
+                <div class="bar-value" id="input-tokens">0</div>
+              </div>
+              <div class="bar-container">
+                <div class="bar-label">Output</div>
+                <div class="bar-wrapper">
+                  <div class="bar output" id="output-tokens-bar" style="width: 0%"></div>
+                </div>
+                <div class="bar-value" id="output-tokens">0</div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h3>Request Distribution</h3>
+            <div class="donut-chart" id="request-dist-chart">
+              <div class="donut-segments" id="donut-segments">
+                <!-- Populated by JavaScript -->
+              </div>
+              <div class="donut-legend" id="donut-legend">
+                <!-- Populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Task List -->
+      <section class="tasks-section">
+        <div class="section-header">
+          <h2 class="section-title">Tasks</h2>
+          <div class="task-filters">
+            <select id="filter-status" class="filter-select">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="running">Running</option>
+              <option value="completed">Completed</option>
+              <option value="failed">Failed</option>
+            </select>
+            <input type="text" id="search-tasks" class="search-input" placeholder="Search tasks...">
+          </div>
+        </div>
+        <div class="task-list" id="task-list">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Alerts Section -->
+      <section class="alerts-section">
+        <h2 class="section-title">Recent Alerts</h2>
+        <div class="alerts-list" id="alerts-list">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Memory Management Section -->
+      <section class="memory-section">
+        <h2 class="section-title">Memory Management</h2>
+        <div class="memory-controls">
+          <div class="memory-project-select">
+            <label for="memory-project-id">Project ID:</label>
+            <input type="text" id="memory-project-id" class="search-input" placeholder="Enter project ID...">
+            <button id="load-memory-btn" class="btn btn-primary">Load Memory</button>
+          </div>
+          <div class="memory-actions">
+            <button id="search-memory-btn" class="btn btn-secondary">Search</button>
+            <button id="purge-memory-btn" class="btn btn-danger">Purge All</button>
+          </div>
+        </div>
+        <div class="memory-search-box">
+          <input type="text" id="memory-search-query" class="search-input" placeholder="Search memories...">
+        </div>
+        <div class="memory-entries" id="memory-entries">
+          <!-- Populated by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Team Management Section -->
+      <section class="teams-section">
+        <h2 class="section-title">Team Management</h2>
+        <div class="teams-controls">
+          <div class="team-actions">
+            <button id="load-teams-btn" class="btn btn-primary">Load Teams</button>
+            <button id="load-presets-btn" class="btn btn-secondary">Load Presets</button>
+            <button id="autoassign-btn" class="btn btn-info">Auto-Assign Test</button>
+          </div>
+          <div class="team-create-form">
+            <input type="text" id="new-team-name" class="search-input" placeholder="New team name...">
+            <input type="text" id="new-team-desc" class="search-input" placeholder="Description...">
+            <button id="create-team-btn" class="btn btn-success">Create Team</button>
+          </div>
+        </div>
+        
+        <!-- Preset Templates -->
+        <div class="presets-grid" id="presets-grid">
+          <!-- Populated by JavaScript -->
+        </div>
+        
+        <!-- Team List -->
+        <div class="teams-grid" id="teams-grid">
+          <!-- Populated by JavaScript -->
+        </div>
+        
+        <!-- Team Detail Panel -->
+        <div class="team-detail-panel hidden" id="team-detail-panel">
+          <div class="panel-header">
+            <h3 id="team-detail-title">Team Details</h3>
+            <button class="modal-close" id="close-team-detail">&times;</button>
+          </div>
+          <div class="panel-body" id="team-detail-body">
+            <!-- Populated by JavaScript -->
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Task Detail Modal -->
+    <div id="task-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Task Details</h2>
+          <button class="modal-close" id="close-modal">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Tie-breaker Modal -->
+    <div id="tiebreaker-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Human Intervention Required</h2>
+          <button class="modal-close" id="close-tiebreaker">&times;</button>
+        </div>
+        <div class="modal-body" id="tiebreaker-body">
+          <!-- Populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Modal for Auto-Assign Test -->
+    <div id="input-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Test Auto-Assignment</h2>
+          <button class="modal-close" id="close-input-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Enter a sample task prompt to test auto-assignment:</p>
+          <textarea id="autoassign-prompt" rows="4" style="width: 100%; margin-top: 10px; padding: 10px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-primary); color: var(--text-primary);" placeholder="Describe your task..."></textarea>
+          <div style="margin-top: 15px; text-align: right;">
+            <button id="submit-autoassign" style="background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/websocket.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
