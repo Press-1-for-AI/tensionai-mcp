@@ -13,11 +13,11 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={pf}\{#MyAppName}
+DefaultDirName={commonpf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=..\installer
-OutputBaseFilename=TensionAI-MCP-Setup-v2
+OutputBaseFilename=TensionAI-MCP-Setup
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -54,16 +54,22 @@ begin
     'Installation Directory', 'Where should TensionAI-MCP be installed?',
     'Select the folder in which to install TensionAI-MCP.', False, '');
   InstallDirPage.Add('');
-  InstallDirPage.Values[0] := ExpandConstant('{pf}\TensionAI-MCP');
+  InstallDirPage.Values[0] := ExpandConstant('{commonpf}\TensionAI-MCP');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  envFile: TStringList;
+  InstallDir: string;
 begin
   if CurStep = ssPostInstall then
   begin
-    if not FileExists(ExpandConstant('{app}\.env')) then
+    InstallDir := InstallDirPage.Values[0];
+    
+    // Copy .env.example to .env
+    if not FileExists(InstallDir + '\.env') then
     begin
-      CopyFile(ExpandConstant('{app}\.env.example'), ExpandConstant('{app}\.env'), False);
+      CopyFile(ExpandConstant(InstallDir + '\.env.example'), InstallDir + '\.env', False);
     end;
   end;
 end;
