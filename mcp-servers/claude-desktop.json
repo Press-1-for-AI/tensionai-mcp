@@ -2,7 +2,7 @@
   "mcpServers": {
     "tensionai-mcp": {
       "command": "bun",
-      "args": ["run", "src/index.ts"],
+      "args": ["run", "src/mcp/stdio.ts"],
       "env": {
         "NODE_ENV": "development"
       },
