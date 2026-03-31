@@ -25,10 +25,22 @@ bun install
 
 ### Windows Installation
 
-If you don't have Bun installed, run the installation script:
+If you don't have Bun installed, you have several options:
 
+**Option 1: Package Manager (Recommended)**
 ```powershell
-# Open PowerShell and run:
+# Using winget (Windows 10/11)
+winget install -e --id Oven.Bun
+
+# Or using Chocolatey
+choco install bun
+
+# Or using Scoop
+scoop install bun
+```
+
+**Option 2: Run our installer script**
+```powershell
 .\scripts\install-bun.ps1
 ```
 
