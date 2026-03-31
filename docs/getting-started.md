@@ -23,25 +23,18 @@ cd tensionai-mcp
 bun install
 ```
 
-### Windows Installation
+### Windows Installation (One-Click)
 
-If you don't have Bun installed, you have several options:
+**Option 1: Download and run our installer**
+Download [`scripts/install-windows.bat`](scripts/install-windows.bat) and double-click it. It will:
+1. Download and install Bun
+2. Clone the repository
+3. Install dependencies
+4. Create .env file
 
-**Option 1: Package Manager (Recommended)**
+**Option 2: Package Manager**
 ```powershell
-# Using winget (Windows 10/11)
 winget install -e --id Oven.Bun
-
-# Or using Chocolatey
-choco install bun
-
-# Or using Scoop
-scoop install bun
-```
-
-**Option 2: Run our installer script**
-```powershell
-.\scripts\install-bun.ps1
 ```
 
 ## Configuration
