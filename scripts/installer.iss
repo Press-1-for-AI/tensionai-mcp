@@ -1,5 +1,4 @@
 ; TensionAI-MCP Inno Setup Script
-; Download Inno Setup from https://jrsoftware.org/isdl.php to compile this
 
 #define MyAppName "TensionAI-MCP"
 #define MyAppVersion "1.0.0"
@@ -14,11 +13,11 @@ AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}
-DefaultDirName={autopf}\{#MyAppName}
+DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=..\installer
-OutputBaseFilename=TensionAI-MCP-Setup
+OutputBaseFilename=TensionAI-MCP-Setup-v2
 Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
@@ -34,9 +33,16 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Open Terminal Here"; Filename: "{cmd}"; Parameters: "/k cd /d {app}"
+Name: "{group}\{#MyAppName}"; Filename: "{cmd}"; Parameters: "/k cd /d {app}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{cmd}"; Parameters: "/k cd /d {app}"; Tasks: desktopicon
+
+[Run]
+; Download and install Bun
+Filename: "powershell"; Parameters: "-Command Invoke-WebRequest -Uri 'https://github.com/oven-sh/bun/releases/latest/download/bun-windows-x64.zip' -OutFile '$env:TEMP\bun.zip'; Expand-Archive -Path '$env:TEMP\bun.zip' -DestinationPath '$env:TEMP\bun' -Force; Copy-Item -Path '$env:TEMP\bun\bun.exe' -Destination '{app}\bun.exe' -Force"; StatusMsg: "Installing Bun runtime..."; Flags: runhidden waituntilterminated
+
+; Run bun install
+Filename: "{cmd}"; Parameters: "/c cd /d {app} && {app}\bun.exe install"; StatusMsg: "Installing dependencies..."; Flags: runhidden waituntilterminated
 
 [Code]
 var
@@ -55,7 +61,6 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    // Copy .env.example to .env
     if not FileExists(ExpandConstant('{app}\.env')) then
     begin
       CopyFile(ExpandConstant('{app}\.env.example'), ExpandConstant('{app}\.env'), False);
