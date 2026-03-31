@@ -16,11 +16,20 @@ A quick start guide for the TensionAI Multi-Agent MCP Server.
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/tensionai-mcp.git
+git clone https://github.com/Press-1-for-AI/tensionai-mcp.git
 cd tensionai-mcp
 
 # Install dependencies
 bun install
+```
+
+### Windows Installation
+
+If you don't have Bun installed, run the installation script:
+
+```powershell
+# Open PowerShell and run:
+.\scripts\install-bun.ps1
 ```
 
 ## Configuration
