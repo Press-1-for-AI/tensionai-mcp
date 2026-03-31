@@ -389,7 +389,7 @@ Form for creating custom teams:
 
 **Usage in Chat:**
 ```
-@adversarial Write a hello world function in Python
+@tensionai Write a hello world function in Python
 ```
 
 ### Cursor
@@ -440,7 +440,7 @@ Write a REST API endpoint for user authentication
 
 **Usage:**
 ```
-Use the adversarial server to build a todo list application
+Use the tensionai server to build a todo list application
 ```
 
 ### VS Code with Copilot
