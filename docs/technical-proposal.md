@@ -496,26 +496,26 @@ interface TranscriptionResult {
 ```yaml
 # OpenWebUI admin settings
 external_connections:
-  adversarial_mcp:
+  tensionai_mcp:
     type: mcp
     url: http://localhost:3000/mcp
-    api_key: ${ADVERSARIAL_API_KEY}
+    api_key: ${TENSIONAI_API_KEY}
 
 models:
-  - name: adversarial-planner
-    provider: adversarial_mcp
+  - name: tensionai-planner
+    provider: tensionai_mcp
     tool: tensionai.execute
     parameters:
       role: planner
 
-  - name: adversarial-generator
-    provider: adversarial_mcp
+  - name: tensionai-generator
+    provider: tensionai_mcp
     tool: tensionai.execute
     parameters:
       role: generator
 
-  - name: adversarial-evaluator
-    provider: adversarial_mcp
+  - name: tensionai-evaluator
+    provider: tensionai_mcp
     tool: tensionai.execute
     parameters:
       role: evaluator
@@ -524,7 +524,7 @@ models:
 **API Endpoints for OpenWebUI**:
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/models` | List available adversarial models |
+| GET | `/api/v1/models` | List available tensionai models |
 | POST | `/api/v1/chat/completions` | OpenAI-compatible chat endpoint |
 | GET | `/api/v1/chat/debate/stream` | WebSocket for real-time debate |
 
@@ -1076,7 +1076,7 @@ HOST=0.0.0.0
 NODE_ENV=development
 
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/adversarial
+DATABASE_URL=postgresql://user:pass@localhost:5432/tensionai
 
 # Redis
 REDIS_URL=redis://localhost:6379
@@ -1118,9 +1118,9 @@ services:
     # 1. host mode (for local LLM access): network_mode: host
     # 2. bridge mode (for production isolation):
     networks:
-      - adversarial-network
+      - tensionai-network
     environment:
-      - DATABASE_URL=postgresql://postgres:5432/adversarial
+      - DATABASE_URL=postgresql://postgres:5432/tensionai
       - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
@@ -1133,14 +1133,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - adversarial-network
+      - tensionai-network
 
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     networks:
-      - adversarial-network
+      - tensionai-network
 
   local-llm:
     image: vllm/vllm:latest
@@ -1151,7 +1151,7 @@ services:
     network_mode: host  # Required for local GPU access
 
 networks:
-  adversarial-network:
+  tensionai-network:
     driver: bridge
 
 volumes:
