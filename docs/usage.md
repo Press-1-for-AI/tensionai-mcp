@@ -66,11 +66,11 @@ The server exposes MCP tools for integration with various clients.
 
 | Tool | Description | Parameters |
 |------|-------------|-------------|
-| `adversarial.execute` | Execute a task with adversarial agents | `task`, `config`, `quality_level` |
-| `adversarial.execute_multimodal` | Process audio/video/image | `task`, `media_url`, `media_type`, `config` |
-| `adversarial.abort` | Abort a running task | `task_id` |
-| `adversarial.status` | Get task status | `task_id` |
-| `adversarial.list_tasks` | List all tasks | `limit`, `status`, `project_id` |
+| `tensionai.execute` | Execute a task with adversarial agents | `task`, `config`, `quality_level` |
+| `tensionai.execute_multimodal` | Process audio/video/image | `task`, `media_url`, `media_type`, `config` |
+| `tensionai.abort` | Abort a running task | `task_id` |
+| `tensionai.status` | Get task status | `task_id` |
+| `tensionai.list_tasks` | List all tasks | `limit`, `status`, `project_id` |
 | `media.transcribe` | Transcribe audio with adversarial review | `media_url`, `language` |
 | `media.describe` | Describe image with adversarial review | `media_url`, `detail_level` |
 | `media.analyze_video` | Analyze video with frame-by-frame review | `media_url`, `start_time`, `end_time` |
@@ -374,7 +374,7 @@ Form for creating custom teams:
 ```json
 {
   "mcpServers": {
-    "adversarial": {
+    "tensionai": {
       "command": "bun",
       "args": ["run", "src/index.ts"],
       "env": {
@@ -400,7 +400,7 @@ Form for creating custom teams:
 ```json
 {
   "mcpServers": {
-    "adversarial": {
+    "tensionai": {
       "command": "bun",
       "args": ["run", "src/index.ts"]
     }
@@ -425,7 +425,7 @@ Write a REST API endpoint for user authentication
 ```json
 {
   "mcpServers": {
-    "adversarial": {
+    "tensionai": {
       "command": "bun",
       "args": ["run", "src/index.ts"],
       "env": {
@@ -449,7 +449,7 @@ For VS Code, you can use the MCP server with custom chat extensions:
 
 ```json
 {
-  "adversarial.server": {
+  "tensionai.server": {
     "command": "bun run src/index.ts"
   }
 }

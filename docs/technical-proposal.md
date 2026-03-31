@@ -5,7 +5,7 @@
 
 ## 1. Executive Summary
 
-This document defines a comprehensive technical architecture for building an **TensionAI Multi-Agent MCP Server** — a production-grade system that extends the adversarial harness pattern (from the existing `adversarial-dev` project) into a full-featured MCP server with multi-model support, real-time dashboard, and sophisticated resource management.
+This document defines a comprehensive technical architecture for building an **TensionAI Multi-Agent MCP Server** — a production-grade system that extends the adversarial harness pattern (from the existing `tensionai-dev` project) into a full-featured MCP server with multi-model support, real-time dashboard, and sophisticated resource management.
 
 The core insight remains: **separate generation from evaluation, then pit them against each other**. This architecture scales that principle into a flexible, production-ready system capable of handling diverse task types with configurable agent teams and robust resource controls.
 
@@ -148,10 +148,10 @@ The MCP server exposes tools for each agent role and handles protocol communicat
 **Tools Exposed**:
 | Tool Name | Description | Parameters |
 |-----------|-------------|------------|
-| `adversarial.execute` | Execute task with adversarial agents | `task`, `config`, `quality_level` |
-| `adversarial.execute_multimodal` | Execute audio/video/image task | `task`, `media_url`, `media_type`, `config`, `quality_level` |
-| `adversarial.abort` | Abort running task | `task_id` |
-| `adversarial.status` | Get task status | `task_id` |
+| `tensionai.execute` | Execute task with adversarial agents | `task`, `config`, `quality_level` |
+| `tensionai.execute_multimodal` | Execute audio/video/image task | `task`, `media_url`, `media_type`, `config`, `quality_level` |
+| `tensionai.abort` | Abort running task | `task_id` |
+| `tensionai.status` | Get task status | `task_id` |
 | `media.transcribe` | Transcribe audio with adversarial review | `media_url`, `language` |
 | `media.describe` | Describe image with adversarial review | `media_url`, `detail_level` |
 | `media.analyze_video` | Analyze video with frame-by-frame review | `media_url`, `start_time`, `end_time` |
@@ -504,19 +504,19 @@ external_connections:
 models:
   - name: adversarial-planner
     provider: adversarial_mcp
-    tool: adversarial.execute
+    tool: tensionai.execute
     parameters:
       role: planner
 
   - name: adversarial-generator
     provider: adversarial_mcp
-    tool: adversarial.execute
+    tool: tensionai.execute
     parameters:
       role: generator
 
   - name: adversarial-evaluator
     provider: adversarial_mcp
-    tool: adversarial.execute
+    tool: tensionai.execute
     parameters:
       role: evaluator
 ```
