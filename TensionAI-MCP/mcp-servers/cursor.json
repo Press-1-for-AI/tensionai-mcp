@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "tensionai-mcp": {
+      "command": "bun",
+      "args": ["run", "src/mcp/stdio.ts"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "description": "TensionAI Multi-Agent MCP Server - Planner/Generator/Evaluator architecture"
+    }
+  }
+}

@@ -5,7 +5,6 @@
 #define MyAppVersion "1.0.0"
 #define MyAppPublisher "Press-1-for-AI"
 #define MyAppURL "https://github.com/Press-1-for-AI/tensionai-mcp"
-#define MyAppExeName "TensionAI-MCP.exe"
 
 [Setup]
 AppId={{B8F2E8A1-5C3D-4E9F-A6B7-1C2D3E4F5A6B}
@@ -35,13 +34,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "..\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\Open Terminal Here"; Filename: "{cmd}"; Parameters: "/k cd /d {app}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-
-[Run]
-Filename: "{app}\scripts\install-bun.ps1"; Description: "Install Bun runtime"; Flags: runhidden waituntilterminated
-Filename: "{cmd}"; Parameters: "/c cd /d {app} && bun install"; Description: "Install dependencies"; Flags: runhidden waituntilterminated
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{cmd}"; Parameters: "/k cd /d {app}"; Tasks: desktopicon
 
 [Code]
 var
@@ -57,18 +52,13 @@ begin
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
-var
-  ResultCode: Integer;
 begin
   if CurStep = ssPostInstall then
   begin
     // Copy .env.example to .env
     if not FileExists(ExpandConstant('{app}\.env')) then
     begin
-      FileCopy(ExpandConstant('{app}\.env.example'), ExpandConstant('{app}\.env'), False);
+      CopyFile(ExpandConstant('{app}\.env.example'), ExpandConstant('{app}\.env'), False);
     end;
-    
-    // Run bun install
-    Exec(ExpandConstant('{app}\bun\bun.exe'), 'install', ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
