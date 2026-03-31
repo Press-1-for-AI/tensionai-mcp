@@ -33,7 +33,7 @@ const config: HarnessConfig = {
 };
 
 logDivider();
-log("HARNESS", "ADVERSARIAL DEV - Claude Agent SDK Harness");
+log("HARNESS", "TENSIONAI - Claude Agent SDK Harness");
 log("HARNESS", `Prompt: "${userPrompt}"`);
 logDivider();
 
