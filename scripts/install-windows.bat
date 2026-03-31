@@ -15,12 +15,23 @@ if %errorLevel% neq 0 (
     echo.
 )
 
+REM Ask for installation directory
+echo.
+echo Where would you like to install TensionAI-MCP?
+echo (Press Enter for default: D:\TensionAI-MCP)
+echo.
+set /p INSTALL_DIR="Installation directory: "
+if "%INSTALL_DIR%"=="" set INSTALL_DIR=D:\TensionAI-MCP
+
+echo.
+echo Installing to: %INSTALL_DIR%
+echo.
+
 REM Create installation directory
-set INSTALL_DIR=%LOCALAPPDATA%\TensionAI-MCP
 if not exist "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
 
 REM Check for Bun
-echo [1/5] Checking for Bun...
+echo [1/6] Checking for Bun...
 where bun >nul 2>&1
 if %errorLevel% equ 0 (
     echo Bun is already installed!
@@ -32,7 +43,7 @@ if %errorLevel% equ 0 (
 
 REM Install Bun if needed
 if %BUN_FOUND% equ 0 (
-    echo [2/5] Downloading Bun...
+    echo [2/6] Downloading Bun...
     powershell -Command "Invoke-WebRequest -Uri 'https://github.com/oven-sh/bun/releases/latest/download/bun-windows-x64.zip' -OutFile '%TEMP%\bun.zip'"
     
     echo Extracting Bun...
@@ -49,7 +60,7 @@ if %BUN_FOUND% equ 0 (
 )
 
 REM Check for Git
-echo [3/5] Checking for Git...
+echo [3/6] Checking for Git...
 where git >nul 2>&1
 if %errorLevel% neq 0 (
     echo ERROR: Git is not installed!
@@ -59,18 +70,18 @@ if %errorLevel% neq 0 (
 )
 
 REM Clone or update repository
-echo [4/5] Setting up TensionAI-MCP...
+echo [4/6] Setting up TensionAI-MCP...
 
-if exist "d:\cursor\tensionai-mcp" (
-    echo Repository already exists at d:\cursor\tensionai-mcp
+if exist "%INSTALL_DIR%\tensionai-mcp" (
+    echo Repository already exists at %INSTALL_DIR%\tensionai-mcp
+    set REPO_DIR=%INSTALL_DIR%\tensionai-mcp
 ) else (
     echo Cloning repository...
-    cd /d D:\
-    if not exist "d:\cursor" mkdir "d:\cursor"
-    git clone https://github.com/Press-1-for-AI/tensionai-mcp.git d:\cursor\tensionai-mcp
+    git clone https://github.com/Press-1-for-AI/tensionai-mcp.git "%INSTALL_DIR%\tensionai-mcp"
+    set REPO_DIR=%INSTALL_DIR%\tensionai-mcp
 )
 
-cd /d d:\cursor\tensionai-mcp
+cd /d "%REPO_DIR%"
 
 REM Copy .env.example to .env if needed
 if not exist ".env" (
@@ -81,20 +92,26 @@ if not exist ".env" (
 )
 
 REM Install dependencies
-echo [5/5] Installing dependencies...
+echo [5/6] Installing dependencies...
 call "%INSTALL_DIR%\bun\bun.exe" install
+
+REM Create shortcut on desktop
+echo [6/6] Creating desktop shortcut...
+powershell -Command "$WScriptShell = New-Object -ComObject WScript.Shell; $Shortcut = $WScriptShell.CreateShortcut('%USERPROFILE%\Desktop\TensionAI-MCP.lnk'); $Shortcut.TargetPath = 'cmd.exe'; $Shortcut.Arguments = '/k cd /d %REPO_DIR%'; $Shortcut.WorkingDirectory = '%REPO_DIR%'; $Shortcut.Description = 'TensionAI-MCP'; $Shortcut.Save()"
 
 echo.
 echo ================================================
 echo Installation Complete!
 echo ================================================
 echo.
+echo Installed to: %REPO_DIR%
+echo.
 echo Next steps:
 echo 1. Edit .env and add your API key
 echo 2. Run: bun run mcp
 echo.
 echo To start the MCP server:
-echo   cd d:\cursor\tensionai-mcp
+echo   cd %REPO_DIR%
 echo   bun run mcp
 echo.
 
