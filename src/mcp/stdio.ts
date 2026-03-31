@@ -10,13 +10,36 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  RequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { getMCPServer, MCP_TOOLS } from "./server.js";
+import crypto from "node:crypto";
 
-// Create MCP server instance
+// ============================================================================
+// Configuration
+// ============================================================================
+
+const LOG_PREFIX = "[MCP-Stdio]";
+const TOOL_TIMEOUT_MS = 300_000; // 5 minutes
+
+// ============================================================================
+// Cached Tools Response
+// ============================================================================
+
+const cachedToolsResponse = {
+  tools: MCP_TOOLS.map((tool) => ({
+    name: tool.name,
+    description: tool.description,
+    inputSchema: tool.inputSchema,
+  })),
+};
+
+// ============================================================================
+// Create MCP Server
+// ============================================================================
+
 const mcpServer = getMCPServer();
 
-// Create the MCP server using the SDK
 const server = new Server(
   {
     name: "tensionai-mcp",
@@ -29,22 +52,46 @@ const server = new Server(
   }
 );
 
-// Set up the tools handler
+// ============================================================================
+// Request Handlers
+// ============================================================================
+
+// Server info handler
+server.setRequestHandler(RequestSchema, async () => ({
+  protocolVersion: "2024-11-05",
+  capabilities: {
+    tools: {},
+  },
+  serverInfo: {
+    name: "tensionai-mcp",
+    version: "1.0.0",
+  },
+}));
+
+// Cached tools list handler
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return {
-    tools: MCP_TOOLS.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-    })),
-  };
+  return cachedToolsResponse;
 });
 
+// Tool call handler with logging, timeout, and error handling
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const requestId = crypto.randomUUID();
   const { name, arguments: args } = request.params;
   
+  console.error(`${LOG_PREFIX} Request ${requestId}: ${name}`, JSON.stringify(args, null, 2));
+  
+  // Create timeout promise
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(`Request ${requestId} timed out after ${TOOL_TIMEOUT_MS}ms`)), TOOL_TIMEOUT_MS);
+  });
+  
   try {
-    const result = await mcpServer.handleToolCall(name, args);
+    const result = await Promise.race([
+      mcpServer.handleToolCall(name, args),
+      timeoutPromise
+    ]);
+    
+    console.error(`${LOG_PREFIX} Request ${requestId}: Success`);
     return {
       content: [
         {
@@ -54,6 +101,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       ],
     };
   } catch (error) {
+    console.error(`${LOG_PREFIX} Request ${requestId}: Error -`, error instanceof Error ? error.message : String(error));
     return {
       content: [
         {
@@ -66,17 +114,48 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Start the stdio server
+// ============================================================================
+// Stdin Close Handling
+// ============================================================================
+
+process.stdin.on("close", () => {
+  console.error(`${LOG_PREFIX} stdin closed, shutting down...`);
+  server.close().then(() => process.exit(0));
+});
+
+// ============================================================================
+// Graceful Shutdown
+// ============================================================================
+
+async function gracefulShutdown(signal: string): Promise<void> {
+  console.error(`${LOG_PREFIX} Received ${signal}, shutting down...`);
+  try {
+    await server.close();
+    console.error(`${LOG_PREFIX} Server closed gracefully`);
+    process.exit(0);
+  } catch (error) {
+    console.error(`${LOG_PREFIX} Error during shutdown:`, error);
+    process.exit(1);
+  }
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+
+// ============================================================================
+// Main
+// ============================================================================
+
 async function main() {
-  console.error("Starting TensionAI MCP Server (stdio)...");
+  console.error(`${LOG_PREFIX} Starting TensionAI MCP Server (stdio)...`);
   
   const transport = new StdioServerTransport();
   await server.connect(transport);
   
-  console.error("TensionAI MCP Server connected via stdio");
+  console.error(`${LOG_PREFIX} Connected via stdio, ready for IDE connections`);
 }
 
 main().catch((error) => {
-  console.error("Failed to start MCP server:", error);
+  console.error(`${LOG_PREFIX} Failed to start MCP server:`, error);
   process.exit(1);
 });
