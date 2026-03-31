@@ -376,7 +376,7 @@ Form for creating custom teams:
   "mcpServers": {
     "adversarial": {
       "command": "bun",
-      "args": ["run", "src/index.ts"],
+      "args": ["run", "src/mcp/stdio.ts"],
       "env": {
         "OPENAI_API_KEY": "sk-xxx"
       }
@@ -402,7 +402,7 @@ Form for creating custom teams:
   "mcpServers": {
     "adversarial": {
       "command": "bun",
-      "args": ["run", "src/index.ts"]
+      "args": ["run", "src/mcp/stdio.ts"]
     }
   }
 }
@@ -427,7 +427,7 @@ Write a REST API endpoint for user authentication
   "mcpServers": {
     "adversarial": {
       "command": "bun",
-      "args": ["run", "src/index.ts"],
+      "args": ["run", "src/mcp/stdio.ts"],
       "env": {
         "OPENAI_API_KEY": "${OPENAI_API_KEY}"
       }
@@ -450,7 +450,7 @@ For VS Code, you can use the MCP server with custom chat extensions:
 ```json
 {
   "adversarial.server": {
-    "command": "bun run src/index.ts"
+    "command": "bun run src/mcp/stdio.ts"
   }
 }
 ```

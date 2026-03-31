@@ -129,7 +129,7 @@ Copy `mcp-servers/roo-code.json` to your Roo Code configuration:
   "mcpServers": {
     "tensionai-mcp": {
       "command": "bun",
-      "args": ["run", "src/index.ts"]
+      "args": ["run", "src/mcp/stdio.ts"]
     }
   }
 }
@@ -144,6 +144,23 @@ Copy `mcp-servers/cursor.json` to your Cursor configuration.
 Copy `mcp-servers/claude-desktop.json` to your Claude Desktop configuration:
 - macOS: `~/Library/Application Support/Claude/settings.json`
 - Windows: `%APPDATA%/Claude/settings.json`
+
+## Running the MCP Server
+
+The MCP server runs as a stdio server - it communicates via stdin/stdout with your IDE.
+
+```bash
+# Option 1: Run directly
+bun run mcp
+
+# Option 2: Using npm script
+npm run mcp
+
+# Option 3: Manual
+bun run src/mcp/stdio.ts
+```
+
+The server will start and wait for IDE connections. Your IDE will automatically detect and use the MCP tools.
 
 ## Docker Deployment
 

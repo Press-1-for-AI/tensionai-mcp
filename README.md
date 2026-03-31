@@ -1,6 +1,6 @@
 # TensionAI-MCP
 
-A GAN-inspired three-agent harness that separates **planning**, **building**, and **evaluation** into distinct AI agents with distinct contexts. The evaluator's job is to **break** what the generator builds -- creating adversarial tension that drives quality far beyond what a single agent can achieve. Built with both the **Claude Agent SDK** and **Codex SDK** so you can run the same architecture on either platform.
+A GAN-inspired three-agent harness that separates **planning**, **building**, and **evaluation** into distinct AI agents with distinct contexts. The evaluator's job is to **break** what the generator builds -- creating adversarial tension that drives quality far beyond what a single agent can achieve.
 
 Based on Anthropic's engineering article: [Harness Design for Long-Running Application Development](https://www.anthropic.com/engineering/harness-design-long-running-apps).
 
@@ -23,72 +23,42 @@ The evaluator doesn't just review code -- it's an adversary. It runs the applica
 ### Prerequisites
 
 - [Bun](https://bun.sh) runtime installed
-- Claude CLI authenticated (`claude auth login`)
-- Codex CLI authenticated (`codex auth login`)
+- At least one LLM provider API key (OpenAI, Anthropic, MiniMax, or Gemini)
 
 ### Install
 
 ```bash
-git clone https://github.com/your-repo/tensionai-mcp.git
+git clone https://github.com/Press-1-for-AI/tensionai-mcp.git
 cd tensionai-mcp
 bun install
 ```
 
-### Run the Claude Harness
+### Configure
 
 ```bash
-bun run claude-harness/index.ts "Build a personal task manager with a REST API, interactive dashboard with charts, task categories, priority levels, due dates, and search functionality"
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-Or pass a detailed prompt from a file:
+### Run the MCP Server
 
 ```bash
-bun run claude-harness/index.ts --file prompt.md
+# For IDE integration (Cursor, Claude Desktop, Roo Code)
+bun run mcp
+
+# Or for REST API server
+bun run dev
 ```
 
-### Run the Codex Harness
+### IDE Integration
 
-```bash
-bun run codex-harness/index.ts "Build a personal task manager with a REST API, interactive dashboard with charts, task categories, priority levels, due dates, and search functionality"
-```
+Copy the appropriate config to your IDE:
 
-Both harnesses write their output to `workspace/claude/` and `workspace/codex/` respectively. The built application lives in `workspace/{sdk}/app/`.
+- **Roo Code**: `mcp-servers/roo-code.json`
+- **Cursor**: `mcp-servers/cursor.json`
+- **Claude Desktop**: `mcp-servers/claude-desktop.json`
 
-## Configuration
-
-Defaults are in `shared/config.ts`:
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `maxSprints` | 10 | Maximum number of sprints |
-| `maxRetriesPerSprint` | 3 | Max evaluation retries before failing a sprint |
-| `passThreshold` | 7 | Minimum score (out of 10) for each criterion |
-| `CLAUDE_MODEL` | `claude-sonnet-4-6` | Model for Claude harness |
-| `CODEX_MODEL` | `gpt-5.4` | Model for Codex harness |
-
-## How It Works
-
-When you run a harness, here's what happens step by step:
-
-### 1. Planning Phase
-The planner takes your short prompt and generates a comprehensive product specification with features organized into sprints, a design language, and tech stack decisions. This spec is written to `spec.md`.
-
-### 2. Contract Negotiation (per sprint)
-The generator proposes what it will build and how success should be measured. The evaluator reviews the criteria, making them more specific, adding edge cases, and raising the bar. They iterate until locked in. The contract is saved as JSON.
-
-### 3. Build Phase (per sprint)
-The generator reads the spec and contract, then implements features one at a time with git commits after each. It has full access to create files, run commands, install dependencies, and test code.
-
-### 4. Evaluation Phase (per sprint)
-The evaluator reads the contract criteria, examines the code, **runs the application**, and tries to break it. It scores each criterion on a 1-10 scale. If all criteria pass (score >= 7/10), the sprint survives. If any fail, detailed feedback goes back to the generator -- with file paths, line numbers, and exact failure descriptions.
-
-### 5. Retry Loop
-The generator reads the adversarial feedback, decides whether to refine or pivot, and rebuilds. This cycles up to 3 times per sprint. If a sprint can't survive the evaluator after all retries, the harness stops.
-
-### 6. Completion
-Once all sprints pass, you have a working application built incrementally with quality gates at every step -- every feature tested by an agent whose job was to break it.
-
-## The Architecture
+## Architecture
 
 ```
 User Prompt (1-4 sentences)
@@ -111,29 +81,59 @@ User Prompt (1-4 sentences)
    +-----------+     implementation      +------------+
          |                                      |
          v              pass                    |
-    Next Sprint <-------------------------------+
+     Next Sprint <-------------------------------+
 ```
 
-### Sprint Contracts
+### MCP Tools
 
-Before any code is written, the generator and evaluator negotiate a **sprint contract**: a JSON document defining exactly what "done" means. Each criterion is specific and testable -- not "works well" but "PUT /frames/reorder returns 200 and reorders frames in the database."
+| Tool | Description |
+|------|-------------|
+| `adversarial_execute` | Execute a task with adversarial agents |
+| `adversarial_status` | Get task status |
+| `adversarial_abort` | Abort a running task |
+| `adversarial_list_tasks` | List all tasks |
+| `memory_search` | Search project memory |
+| `memory_write` | Write to project memory |
+| `memory_purge` | Purge project memory |
 
-The evaluator uses contract negotiation to set traps -- adding edge cases, tightening thresholds, and demanding specifics that force the generator to build robust code from the start. This is directly from Anthropic's approach. They found that JSON contracts work better than markdown because models are less likely to tamper with structured JSON.
+## Configuration
 
-### File-Based Communication
+Defaults are in `shared/config.ts`:
 
-Agents communicate through files, not shared conversation history. This keeps each agent's context focused on its role:
-- `spec.md` -- Product specification from the planner
-- `contracts/sprint-{n}.json` -- Sprint contracts
-- `feedback/sprint-{n}-round-{m}.json` -- Evaluator feedback per attempt
-- `progress.json` -- Harness state tracking
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `maxSprints` | 10 | Maximum number of sprints |
+| `maxRetriesPerSprint` | 3 | Max evaluation retries before failing a sprint |
+| `passThreshold` | 7 | Minimum score (out of 10) for each criterion |
+
+## How It Works
+
+When you run a task, here's what happens step by step:
+
+### 1. Planning Phase
+The planner takes your short prompt and generates a comprehensive product specification with features organized into sprints, a design language, and tech stack decisions. This spec is written to `spec.md`.
+
+### 2. Contract Negotiation (per sprint)
+The generator proposes what it will build and how success should be measured. The evaluator reviews the criteria, making them more specific, adding edge cases, and raising the bar. They iterate until locked in. The contract is saved as JSON.
+
+### 3. Build Phase (per sprint)
+The generator reads the spec and contract, then implements features one at a time with git commits after each. It has full access to create files, run commands, install dependencies, and test code.
+
+### 4. Evaluation Phase (per sprint)
+The evaluator reads the contract criteria, examines the code, **runs the application**, and tries to break it. It scores each criterion on a 1-10 scale. If all criteria pass (score >= 7/10), the sprint survives. If any fail, detailed feedback goes back to the generator -- with file paths, line numbers, and exact failure descriptions.
+
+### 5. Retry Loop
+The generator reads the adversarial feedback, decides whether to refine or pivot, and rebuilds. This cycles up to 3 times per sprint. If a sprint can't survive the evaluator after all retries, the harness stops.
+
+### 6. Completion
+Once all sprints pass, you have a working application built incrementally with quality gates at every step -- every feature tested by an agent whose job was to break it.
 
 ## The GAN Connection
 
 This architecture is inspired by **Generative Adversarial Networks** (GANs), where a generator creates outputs and a discriminator tries to reject them, iterating until quality emerges from the tension between the two.
 
 | GANs | This Harness |
-|------|-------------|
+|------|---------------|
 | Generator vs. discriminator | **Generator vs. evaluator** |
 | Gradient descent | **Hard pass/fail thresholds** |
 | Two networks | **Three agents** (adds planner) |
@@ -162,102 +162,36 @@ Two principles that matter most:
 
 ```
 tensionai-mcp/
-├── shared/              # Shared types, config, prompts, utilities
-│   ├── types.ts         # TypeScript interfaces
-│   ├── config.ts        # Model and threshold defaults
-│   ├── prompts.ts       # Agent system prompts (identical for both SDKs)
-│   ├── logger.ts        # Colored console output
-│   └── files.ts         # File I/O for specs, contracts, feedback
-├── claude-harness/      # Claude Agent SDK implementation
-│   ├── index.ts         # CLI entry point
-│   ├── harness.ts       # Orchestration loop
-│   ├── planner.ts       # Planner agent
-│   ├── generator.ts     # Generator agent
-│   └── evaluator.ts     # Evaluator agent
-├── codex-harness/       # Codex SDK implementation
-│   ├── index.ts         # CLI entry point
-│   ├── harness.ts       # Orchestration loop
-│   ├── planner.ts       # Planner agent
-│   ├── generator.ts     # Generator agent
-│   └── evaluator.ts     # Evaluator agent
-└── workspace/           # Runtime output (gitignored)
-    ├── claude/          # Claude harness working directory
-    └── codex/           # Codex harness working directory
+├── mcp-servers/           # IDE MCP configurations
+│   ├── roo-code.json
+│   ├── cursor.json
+│   └── claude-desktop.json
+├── src/
+│   ├── index.ts           # REST API server entry point
+│   ├── mcp/
+│   │   ├── server.ts      # MCP server logic
+│   │   └── stdio.ts       # MCP stdio server (for IDEs)
+│   ├── api/               # REST API server
+│   ├── orchestrator/      # Agent orchestration
+│   ├── providers/         # LLM provider integrations
+│   ├── memory/            # Memory service
+│   └── ...
+├── docs/                  # Documentation
+├── tests/
+│   └── e2e/              # E2E tests
+└── docker-compose.yml    # Docker deployment
 ```
 
-Both harnesses share the same prompts, types, and orchestration flow. The only differences are the SDK-specific agent implementations -- `query()` async generators for Claude, `Codex` threads for Codex.
+## Documentation
 
----
+- [Getting Started](docs/getting-started.md) - Quick start guide
+- [Usage Guide](docs/usage.md) - Detailed usage instructions
+- [API Reference](docs/api-reference.md) - REST API documentation
+- [MCP Tools](docs/mcp-tools.md) - Tool-specific documentation
+- [Installation](docs/installation.md) - Full installation guide
+- [Examples](docs/examples.md) - Real-world examples
 
-## MCP Server
-
-This project also includes a production-ready **TensionAI Multi-Agent MCP Server** that provides the Planner/Generator/Evaluator architecture as MCP tools for IDE integration.
-
-### Features
-
-- **Multi-Provider Support**: OpenAI, Anthropic, MiniMax, Gemini, and local models
-- **Resource Management**: Queue management, budget limits, rate limiting
-- **Memory Service**: Semantic memory with vector storage
-- **Team Configuration**: Custom agent teams with presets
-- **Dashboard & Monitoring**: Real-time metrics with Prometheus/Grafana
-- **Docker Ready**: Production deployment with docker-compose
-
-### Quick Start - MCP Server
-
-```bash
-# Install dependencies
-bun install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# Start the server
-bun run dev
-
-# The server runs on http://localhost:3000
-```
-
-### MCP Tools
-
-| Tool | Description |
-|------|-------------|
-| `adversarial_execute` | Execute a task with adversarial agents |
-| `adversarial_status` | Get task status |
-| `adversarial_abort` | Abort a running task |
-| `adversarial_list_tasks` | List all tasks |
-| `memory_search` | Search project memory |
-| `memory_write` | Write to project memory |
-| `memory_purge` | Purge project memory |
-
-### IDE Integration
-
-Copy the appropriate config to your IDE:
-
-- **Roo Code**: `mcp-servers/roo-code.json`
-- **Cursor**: `mcp-servers/cursor.json`
-- **Claude Desktop**: `mcp-servers/claude-desktop.json`
-
-### CLI Client
-
-```bash
-# Execute a task
-bun run src/cli/client.ts execute "Build a REST API"
-
-# Check task status
-bun run src/cli/client.ts status task-123
-
-# List running tasks
-bun run src/cli/client.ts list running
-
-# Switch provider
-bun run src/cli/client.ts switch-provider anthropic
-
-# Get metrics
-bun run src/cli/client.ts metrics
-```
-
-### Docker Deployment
+## Docker Deployment
 
 ```bash
 # Build and run
@@ -268,38 +202,6 @@ docker run -p 3000:3000 -e OPENAI_API_KEY=sk-... tensionai-mcp
 docker-compose up -d
 ```
 
-### Documentation
+## License
 
-- [Getting Started](docs/getting-started.md) - Quick start guide
-- [API Reference](docs/api-reference.md) - REST API documentation
-- [MCP Tools](docs/mcp-tools.md) - Tool-specific documentation
-
-### Project Structure - MCP Server
-
-```
-tensionai-mcp/
-├── mcp-servers/           # IDE MCP configurations
-│   ├── roo-code.json
-│   ├── cursor.json
-│   └── claude-desktop.json
-├── src/
-│   ├── index.ts           # Main entry point
-│   ├── api/               # REST API server
-│   ├── mcp/               # MCP server implementation
-│   ├── orchestrator/      # Agent orchestration
-│   ├── providers/         # LLM provider integrations
-│   ├── memory/            # Memory service
-│   ├── queue/             # Request queue
-│   ├── budget/            # Budget management
-│   ├── teams/             # Team configuration
-│   ├── cli/               # CLI client
-│   └── integrations/      # OpenWebUI integration
-├── tests/
-│   └── e2e/              # E2E tests
-├── scripts/
-│   └── benchmark.ts      # Performance benchmarks
-└── docs/                  # Documentation
-    ├── getting-started.md
-    ├── api-reference.md
-    └── mcp-tools.md
-```
+MIT
