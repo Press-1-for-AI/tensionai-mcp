@@ -40,3 +40,9 @@ debates/
 
 # MCP artifacts
 .mcp/
+
+# Local IDE configs
+.roo/
+-p/
+tensionai-mcp.txt
+prompt.md
